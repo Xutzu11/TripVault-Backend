@@ -1,0 +1,50 @@
+[
+    {
+        "id": 1,
+        "name": "Museum of Chocolate",
+        "location": "Brussels",
+        "revenue": 250000
+    },
+    {
+        "id": 2,
+        "name": "Museum of Broken Hearts",
+        "location": "Zagreb",
+        "revenue": 400000
+    },
+    {
+        "id": 3,
+        "name": "Museum of Fast Food",
+        "location": "California",
+        "revenue": 850000
+    },
+    {
+        "id": 4,
+        "name": "Museo Reina Sofia",
+        "location": "Madrid",
+        "revenue": 2850000
+    },
+    {
+        "id": 5,
+        "name": "Etnographic Transylvania Museum",
+        "location": "Cluj-Napoca",
+        "revenue": 156000
+    },
+    {
+        "id": 6,
+        "name": "Museum Madame Tussauds",
+        "location": "Paris",
+        "revenue": 7850000
+    },
+    {
+        "id": 7,
+        "name": "Museum of History",
+        "location": "Munich",
+        "revenue": 4350000
+    },
+    {
+        "id": 8,
+        "name": "Museum-of-Illusions",
+        "location": "Budapest",
+        "revenue": 980000
+    }
+]
