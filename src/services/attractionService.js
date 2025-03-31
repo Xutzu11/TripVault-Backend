@@ -31,26 +31,31 @@ async function getAttractionsByRangeWithFilters(start, end, sortopt, name, theme
     const offset = start - 1;
     if (sortopt == "" || sortopt == "id") sortopt = "id";
     try {
-        const stateQuery = `SELECT name FROM states WHERE id = ?`;
-        const cityQuery = `SELECT name FROM cities WHERE id = ?`;
-
-        const [stateResult] = await queryAsync(stateQuery, [state]);
-        const [cityResult] = await queryAsync(cityQuery, [city]);
-
-        const stateName = stateResult.length ? stateResult[0].name : '';
-        const cityName = cityResult.length ? cityResult[0].name : '';
-        // todo: add stateName and cityName
+        var locationCondition, queryParams;
+        if (state != 0 && city != 0) {
+            locationCondition = `city_id = ?`;
+            queryParams = [name, name, theme, theme, city, minrev, maxrev, minrating, offset, limit];
+        }
+        else if (state != 0) {
+            locationCondition = `city_id IN (SELECT id FROM cities WHERE state_id = ?)`;
+            queryParams = [name, name, theme, theme, state, minrev, maxrev, minrating, offset, limit];
+        }
+        else {
+            locationCondition = `1=1`;
+            queryParams = [name, name, theme, theme, minrev, maxrev, minrating, offset, limit];
+        }
+    
         const attractionsQuery = `
             SELECT * FROM attractions 
             WHERE (? LIKE CONCAT('%', name, '%') OR name LIKE CONCAT('%', ?, '%'))
             AND (? LIKE CONCAT('%', theme, '%') OR theme LIKE CONCAT('%', ?, '%'))
-            AND revenue >= ? 
-            AND revenue <= ? 
+            AND (${locationCondition})
+            AND (revenue >= ? AND revenue <= ?)
             AND rating >= ? 
             ORDER BY ${sortopt} 
             LIMIT ?, ? 
         `;
-        const [attractions] = await queryAsync(attractionsQuery, [name, name, theme, theme, minrev, maxrev, minrating, offset, limit]);
+        const [attractions] = await queryAsync(attractionsQuery, queryParams);
         return attractions;
     } catch (error) {
         throw error;
@@ -71,24 +76,28 @@ function queryAsync(query, params) {
 
 async function getAttractionsCountWithFilters(name, theme, minrev, maxrev, state, city, minrating) {
     try {
-        const stateQuery = `SELECT name FROM states WHERE id = ?`;
-        const cityQuery = `SELECT name FROM cities WHERE id = ?`;
-
-        const [stateResult] = await queryAsync(stateQuery, [state]);
-        const [cityResult] = await queryAsync(cityQuery, [city]);
-
-        const stateName = stateResult.length ? stateResult[0].name : '';
-        const cityName = cityResult.length ? cityResult[0].name : '';
-        // todo: add stateName and cityName
+        var locationCondition, queryParams;
+        if (state != 0 && city != 0) {
+            locationCondition = `city_id = ?`;
+            queryParams = [name, name, theme, theme, city, minrev, maxrev, minrating];
+        }
+        else if (state != 0) {
+            locationCondition = `city_id IN (SELECT id FROM cities WHERE state_id = ?)`;
+            queryParams = [name, name, theme, theme, state, minrev, maxrev, minrating];
+        }
+        else {
+            locationCondition = `1=1`;
+            queryParams = [name, name, theme, theme, minrev, maxrev, minrating];
+        }
         const attractionsQuery = `
             SELECT COUNT(*) as count FROM attractions 
             WHERE (? LIKE CONCAT('%', name, '%') OR name LIKE CONCAT('%', ?, '%'))
             AND (? LIKE CONCAT('%', theme, '%') OR theme LIKE CONCAT('%', ?, '%'))
-            AND revenue >= ? 
-            AND revenue <= ? 
+            AND (${locationCondition})
+            AND (revenue >= ? AND revenue <= ?) 
             AND rating >= ? 
         `;
-        const [count] = await queryAsync(attractionsQuery, [name, name, theme, theme, minrev, maxrev, minrating]);
+        const [count] = await queryAsync(attractionsQuery, queryParams);
         return count[0].count;
     } catch (error) {
         throw error;
