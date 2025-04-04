@@ -46,8 +46,8 @@ module.exports = (app) => {
                 res.status(401).send('Access denied');
                 return;
             }
-            const { sortopt, name, theme, minrev, maxrev, state, city, minrating } = req.query;
-            const attractions = await getAttractionsByRangeWithFilters(req.params.start, req.params.end, sortopt, name, theme, minrev, maxrev, state, city, minrating);
+            const { sortingOption, name, theme, state, city, minimumRating } = req.query;
+            const attractions = await getAttractionsByRangeWithFilters(req.params.start, req.params.end, sortingOption, name, theme, state, city, minimumRating);
             res.status(200).json(attractions);
         } catch (error) {
             console.error('Error retrieving attractions:', error);
@@ -65,8 +65,8 @@ module.exports = (app) => {
                 res.status(401).send('Access denied');
                 return;
             }
-            const { name, theme, minrev, maxrev, state, city, minrating } = req.query;
-            const count = await getAttractionsCountWithFilters( name, theme, minrev, maxrev, state, city, minrating);
+            const { name, theme, state, city, minrating } = req.query;
+            const count = await getAttractionsCountWithFilters( name, theme, state, city, minrating);
             res.status(200).json(count);
         } catch (error) {
             console.error('Error retrieving attractions:', error);

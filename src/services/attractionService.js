@@ -26,7 +26,7 @@ async function getAttractionsByRange(start, end) {
     });
 }
 
-async function getAttractionsByRangeWithFilters(start, end, sortopt, name, theme, minrev, maxrev, state, city, minrating) {
+async function getAttractionsByRangeWithFilters(start, end, sortopt, name, theme, state, city, minrating) {
     const limit = end - start + 1;
     const offset = start - 1;
     if (sortopt == "" || sortopt == "id") sortopt = "id";
@@ -34,15 +34,15 @@ async function getAttractionsByRangeWithFilters(start, end, sortopt, name, theme
         var locationCondition, queryParams;
         if (state != 0 && city != 0) {
             locationCondition = `city_id = ?`;
-            queryParams = [name, name, theme, theme, city, minrev, maxrev, minrating, offset, limit];
+            queryParams = [name, name, theme, theme, city, minrating, offset, limit];
         }
         else if (state != 0) {
             locationCondition = `city_id IN (SELECT id FROM cities WHERE state_id = ?)`;
-            queryParams = [name, name, theme, theme, state, minrev, maxrev, minrating, offset, limit];
+            queryParams = [name, name, theme, theme, state, minrating, offset, limit];
         }
         else {
             locationCondition = `1=1`;
-            queryParams = [name, name, theme, theme, minrev, maxrev, minrating, offset, limit];
+            queryParams = [name, name, theme, theme, minrating, offset, limit];
         }
     
         const attractionsQuery = `
@@ -50,7 +50,6 @@ async function getAttractionsByRangeWithFilters(start, end, sortopt, name, theme
             WHERE (? LIKE CONCAT('%', name, '%') OR name LIKE CONCAT('%', ?, '%'))
             AND (? LIKE CONCAT('%', theme, '%') OR theme LIKE CONCAT('%', ?, '%'))
             AND (${locationCondition})
-            AND (revenue >= ? AND revenue <= ?)
             AND rating >= ? 
             ORDER BY ${sortopt} 
             LIMIT ?, ? 
@@ -74,27 +73,26 @@ function queryAsync(query, params) {
     });
 }
 
-async function getAttractionsCountWithFilters(name, theme, minrev, maxrev, state, city, minrating) {
+async function getAttractionsCountWithFilters(name, theme, state, city, minrating) {
     try {
         var locationCondition, queryParams;
         if (state != 0 && city != 0) {
             locationCondition = `city_id = ?`;
-            queryParams = [name, name, theme, theme, city, minrev, maxrev, minrating];
+            queryParams = [name, name, theme, theme, city, minrating];
         }
         else if (state != 0) {
             locationCondition = `city_id IN (SELECT id FROM cities WHERE state_id = ?)`;
-            queryParams = [name, name, theme, theme, state, minrev, maxrev, minrating];
+            queryParams = [name, name, theme, theme, state, minrating];
         }
         else {
             locationCondition = `1=1`;
-            queryParams = [name, name, theme, theme, minrev, maxrev, minrating];
+            queryParams = [name, name, theme, theme, minrating];
         }
         const attractionsQuery = `
             SELECT COUNT(*) as count FROM attractions 
             WHERE (? LIKE CONCAT('%', name, '%') OR name LIKE CONCAT('%', ?, '%'))
             AND (? LIKE CONCAT('%', theme, '%') OR theme LIKE CONCAT('%', ?, '%'))
             AND (${locationCondition})
-            AND (revenue >= ? AND revenue <= ?) 
             AND rating >= ? 
         `;
         const [count] = await queryAsync(attractionsQuery, queryParams);
