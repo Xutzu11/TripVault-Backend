@@ -12,5 +12,6 @@ require('./routers/attractionRouter')(app);
 require('./routers/eventRouter')(app);
 require('./routers/userRouter')(app);
 require('./routers/locationRouter')(app);
+require('./routers/stripeRouter')(app);
 
 module.exports = app

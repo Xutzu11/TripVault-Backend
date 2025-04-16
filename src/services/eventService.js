@@ -149,6 +149,81 @@ async function addEvent(newName, newDescr, newPrice, newMID, newStartDate, newEn
     });
 }
 
+async function getFilteredEvents(name, maxPrice, state, city, sortOpt, start, end) {
+    return new Promise((resolve, reject) => {
+        const limit = end - start + 1;
+        const offset = start - 1;
+        const values = [];
+
+        let query = `
+            SELECT e.* FROM events e
+            JOIN attractions a ON e.attraction_id = a.id
+            JOIN cities c ON a.city_id = c.id
+            WHERE 1=1
+        `;
+
+        if (name) {
+            query += ' AND e.name LIKE ?';
+            values.push(`%${name}%`);
+        }
+        if (!isNaN(maxPrice)) {
+            query += ' AND e.price <= ?';
+            values.push(maxPrice);
+        }
+        if (state) {
+            query += ' AND c.state_id = ?';
+            values.push(state);
+        }
+        if (city) {
+            query += ' AND a.city_id = ?';
+            values.push(city);
+        }
+
+        if (!['name', 'price', 'id'].includes(sortOpt)) sortOpt = 'id';
+        query += ` ORDER BY e.${sortOpt} LIMIT ?, ?`;
+        values.push(offset, limit);
+
+        con.query(query, values, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+        });
+    });
+}
+
+async function getFilteredEventsCount(name, maxPrice, state, city) {
+    return new Promise((resolve, reject) => {
+        const values = [];
+
+        let query = `
+            SELECT COUNT(*) as count FROM events e
+            JOIN attractions a ON e.attraction_id = a.id
+            JOIN cities c ON a.city_id = c.id
+            WHERE 1=1
+        `;
+
+        if (name) {
+            query += ' AND e.name LIKE ?';
+            values.push(`%${name}%`);
+        }
+        if (!isNaN(maxPrice)) {
+            query += ' AND e.price <= ?';
+            values.push(maxPrice);
+        }
+        if (state) {
+            query += ' AND c.state_id = ?';
+            values.push(state);
+        }
+        if (city) {
+            query += ' AND a.city_id = ?';
+            values.push(city);
+        }
+        con.query(query, values, (err, result) => {
+            if (err) reject(err);
+            else resolve(result[0].count);
+        });
+    });
+}
+
 module.exports = {
     getEvents,
     getEventsCount,
@@ -160,5 +235,7 @@ module.exports = {
     deleteEvent,
     updateEvent,
     eventNotExist,
-    addEvent
+    addEvent,
+    getFilteredEvents,
+    getFilteredEventsCount
 };

@@ -5,7 +5,7 @@ const path = require('path')
 const PORT = 4000;
 const app = require('./app')
 const con = require('./database/db')
-const email = require('../email.json')
+const email = require('../configs/email.json')
 
 
 /// Mail sender

@@ -1,6 +1,5 @@
-const app = require('../app')
 const { verifyUser, verifyAdmin, verifyLoggedIn } = require('../services/userService');
-const { getEvents, getEventsCount, getEventsByAttraction, getEventsByAttractionCount, getEventsByAttractionAndRange, getEventsByRange, getEventByID, deleteEvent, updateEvent, addEvent, eventNotExist } = require('../services/eventService');
+const { getEvents, getEventsCount, getEventsByAttraction, getEventsByAttractionCount, getEventsByAttractionAndRange, getEventsByRange, getEventByID, deleteEvent, updateEvent, addEvent, eventNotExist, getFilteredEvents, getFilteredEventsCount } = require('../services/eventService');
 const { attractionNotExists } = require('../services/attractionService');
 
 module.exports = (app) => {
@@ -269,4 +268,64 @@ module.exports = (app) => {
         res.status(200).send('Event added successfully');
     });
 
+    app.get("/api/events/filtered/from/:start/to/:end", async (req, res) => {
+        try {
+            const token = req.header('Authorization');
+            const userVerification = await verifyUser(token);
+            if (!userVerification) return res.status(401).send("Access denied");
+    
+            const {
+                name = '',
+                price = 100,
+                state = 0,
+                city = 0,
+                sortopt = '',
+            } = req.query;
+    
+            const start = parseInt(req.params.start);
+            const end = parseInt(req.params.end);
+    
+            const events = await getFilteredEvents(
+                name,
+                parseFloat(price),
+                parseInt(state),
+                parseInt(city),
+                sortopt,
+                start,
+                end,
+            );
+    
+            res.status(200).json(events);
+        } catch (err) {
+            console.error('Error retrieving filtered events:', err);
+            res.status(500).send('Internal Server Error');
+        }
+    });
+    
+    app.get("/api/events/filtered/count", async (req, res) => {
+        try {
+            const token = req.header('Authorization');
+            const userVerification = await verifyUser(token);
+            if (!userVerification) return res.status(401).send("Access denied");
+    
+            const {
+                name = '',
+                price = 100,
+                state = 0,
+                city = 0,
+            } = req.query;
+    
+            const count = await getFilteredEventsCount(
+                name,
+                parseFloat(price),
+                parseInt(state),
+                parseInt(city),
+            );
+    
+            res.status(200).json(count);
+        } catch (err) {
+            console.error('Error counting filtered events:', err);
+            res.status(500).send('Internal Server Error');
+        }
+    });    
 }
