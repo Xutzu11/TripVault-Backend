@@ -13,5 +13,6 @@ require('./routers/eventRouter')(app);
 require('./routers/userRouter')(app);
 require('./routers/locationRouter')(app);
 require('./routers/stripeRouter')(app);
+require('./routers/orderRouter')(app);
 
 module.exports = app

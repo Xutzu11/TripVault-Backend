@@ -1,7 +1,6 @@
 const { getStates, getCitiesByState } = require('../services/locationService');
 
 module.exports = (app) => {
-
     app.get("/api/cities", async (req, res) => {
         try {
             const state = req.query.state;

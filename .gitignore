@@ -139,3 +139,4 @@ dist
 email.json
 dbconfig.json
 stripe.json
+web.json

@@ -1,11 +1,12 @@
 const config = require("../../configs/stripe.json");
 const stripe = require("stripe")(config.PRIVATE_KEY);
+const web_config = require("../../configs/web.json"); 
 
 module.exports = (app) => {
   // Create Stripe Checkout Session
   app.post("/api/stripe/create-checkout-session", async (req, res) => {
     const { amount } = req.body; // amount in cents
-
+    const baseUrl = `https://${web_config.HOST}:${web_config.PORT}`;
     try {
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
@@ -22,8 +23,8 @@ module.exports = (app) => {
           },
         ],
         mode: "payment",
-        success_url: "https://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url: "https://localhost:3000/cancel",
+        success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/cancel`,
       });
 
       res.status(200).json({ id: session.id });
