@@ -37,14 +37,14 @@ module.exports = (app) => {
     })
 
     app.post("/api/register", async (req, res) => {
-        const { Username, FirstName, LastName, Email, Password } = req.body;
+        const { Username, FirstName, LastName, Email, Password, Role } = req.body;
         const user = await getUser(Username);
         bcrypt.hash(Password, saltRounds)
         .then(HashedPass => {
             if (user != null) {
                 return Promise.reject(401);
             }
-            return createUser(Username, FirstName, LastName, Email, HashedPass); 
+            return createUser(Username, FirstName, LastName, Email, Role, HashedPass); 
         })
         .then(() => {
             res.status(200).send('Account created successfully');

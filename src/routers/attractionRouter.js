@@ -1,5 +1,5 @@
-const { getAttractions, getAttractionsByRange, getAttractionByID, deleteAttraction, updateAttraction, addAttraction, getAttractionsByRangeWithFilters, getAttractionsCountWithFilters } = require('../services/attractionService');
-const { verifyLoggedIn, verifyAdmin, verifyUser } = require('../services/userService');
+const { getAttractions, getAttractionByID, deleteAttraction, updateAttraction, addAttraction, getAttractionsByRangeWithFilters, getAttractionsCountWithFilters } = require('../services/attractionService');
+const { verifyLoggedIn } = require('../services/userService');
 
 module.exports = (app) => {
 
@@ -20,25 +20,9 @@ module.exports = (app) => {
         }
     });
 
-    app.get("/api/attractions/from/:start/to/:end", async (req, res) => {
-        try {
-            const token = req.header('Authorization');
-            const userVerification = await verifyLoggedIn(token);
-            if (userVerification == null) {
-                res.status(401).send('Access denied');
-                return;
-            }
-            const attractions = await getAttractionsByRange(req.params.start, req.params.end);
-            res.status(200).json(attractions);
-        } catch (error) {
-            console.error('Error retrieving attractions:', error);
-            res.status(500).send('Internal Server Error');
-        }
-    });
 
 
-
-    app.get("/api/attractions/filtered/from/:start/to/:end/", async (req, res) => {
+    app.get("/api/attractions/from/:start/to/:end/", async (req, res) => {
         try {
             const token = req.header('Authorization');
             const userVerification = await verifyLoggedIn(token);
@@ -47,7 +31,7 @@ module.exports = (app) => {
                 return;
             }
             const { sortingOption, name, theme, state, city, minimumRating } = req.query;
-            const attractions = await getAttractionsByRangeWithFilters(req.params.start, req.params.end, sortingOption, name, theme, state, city, minimumRating);
+            const attractions = await getAttractionsByRangeWithFilters((userVerification.role == 'admin' ? userVerification.username : null), req.params.start, req.params.end, sortingOption, name, theme, state, city, minimumRating);
             res.status(200).json(attractions);
         } catch (error) {
             console.error('Error retrieving attractions:', error);
@@ -57,7 +41,7 @@ module.exports = (app) => {
 
 
 
-    app.get("/api/attractions/filtered/count", async (req, res) => {
+    app.get("/api/attractions/count", async (req, res) => {
         try {
             const token = req.header('Authorization');
             const userVerification = await verifyLoggedIn(token);
@@ -66,7 +50,7 @@ module.exports = (app) => {
                 return;
             }
             const { name, theme, state, city, minimumRating } = req.query;
-            const count = await getAttractionsCountWithFilters( name, theme, state, city, minimumRating);
+            const count = await getAttractionsCountWithFilters((userVerification.role == 'admin' ? userVerification.username : null), name, theme, state, city, minimumRating);
             res.status(200).json(count);
         } catch (error) {
             console.error('Error retrieving attractions:', error);
@@ -166,6 +150,8 @@ module.exports = (app) => {
         }
     });
 
+
+
     app.get("/api/attractions/closest", async (req, res) => {
         const {latitude, longitude, max_distance, min_rating, nr_attractions} = req.query;
         if (!latitude || !longitude) return res.status(400).send('Invalid coordinates');
@@ -204,6 +190,9 @@ module.exports = (app) => {
             res.status(500).json('Internal Server Error');
         }
     });
+
+
+
 
     app.get("/api/attractions/count", async (req, res) => {
         try {

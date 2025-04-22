@@ -12,45 +12,39 @@ async function getAttractions() {
     });
 }
 
-async function getAttractionsByRange(start, end) {
-    return new Promise((resolve, reject) => {
-        const limit = end - start + 1;
-        const offset = start - 1;
-        con.query('SELECT * FROM attractions ORDER BY id LIMIT ?, ?', [offset, limit], (err, result) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(result);
-            }
-        });
-    });
-}
-
-async function getAttractionsByRangeWithFilters(start, end, sortopt, name, theme, state, city, minrating) {
+async function getAttractionsByRangeWithFilters(username, start, end, sortopt, name, theme, state, city, minrating) {
     const limit = end - start + 1;
     const offset = start - 1;
     if (sortopt == "" || sortopt == "id") sortopt = "id";
     try {
-        var locationCondition, queryParams;
+        var locationCondition, usernameCondition, queryParams;
+        queryParams = [name, name, theme, theme, minrating];
+        if (username != null) {
+            usernameCondition = `username = ?`;
+            queryParams = [...queryParams, username];
+        }
+        else {
+            usernameCondition = `1=1`;
+        }
         if (state != 0 && city != 0) {
             locationCondition = `city_id = ?`;
-            queryParams = [name, name, theme, theme, city, minrating, offset, limit];
+            queryParams = [...queryParams, city];
         }
         else if (state != 0) {
             locationCondition = `city_id IN (SELECT id FROM cities WHERE state_id = ?)`;
-            queryParams = [name, name, theme, theme, state, minrating, offset, limit];
+            queryParams = [...queryParams, state];
         }
         else {
             locationCondition = `1=1`;
-            queryParams = [name, name, theme, theme, minrating, offset, limit];
         }
-    
+        queryParams = [...queryParams, offset, limit];
         const attractionsQuery = `
             SELECT * FROM attractions 
             WHERE (? LIKE CONCAT('%', name, '%') OR name LIKE CONCAT('%', ?, '%'))
             AND (? LIKE CONCAT('%', theme, '%') OR theme LIKE CONCAT('%', ?, '%'))
-            AND (${locationCondition})
             AND rating >= ? 
+            AND (${usernameCondition})
+            AND (${locationCondition})
             ORDER BY ${sortopt} 
             LIMIT ?, ? 
         `;
@@ -73,27 +67,35 @@ function queryAsync(query, params) {
     });
 }
 
-async function getAttractionsCountWithFilters(name, theme, state, city, minrating) {
+async function getAttractionsCountWithFilters(username, name, theme, state, city, minrating) {
     try {
-        var locationCondition, queryParams;
+        var locationCondition, usernameCondition, queryParams;
+        queryParams = [name, name, theme, theme, minrating];
+        if (username != null) {
+            usernameCondition = `username = ?`;
+            queryParams = [...queryParams, username];
+        }
+        else {
+            usernameCondition = `1=1`;
+        }
         if (state != 0 && city != 0) {
             locationCondition = `city_id = ?`;
-            queryParams = [name, name, theme, theme, city, minrating];
+            queryParams = [...queryParams, city];
         }
         else if (state != 0) {
             locationCondition = `city_id IN (SELECT id FROM cities WHERE state_id = ?)`;
-            queryParams = [name, name, theme, theme, state, minrating];
+            queryParams = [...queryParams, state];
         }
         else {
             locationCondition = `1=1`;
-            queryParams = [name, name, theme, theme, minrating];
         }
         const attractionsQuery = `
             SELECT COUNT(*) as count FROM attractions 
             WHERE (? LIKE CONCAT('%', name, '%') OR name LIKE CONCAT('%', ?, '%'))
             AND (? LIKE CONCAT('%', theme, '%') OR theme LIKE CONCAT('%', ?, '%'))
-            AND (${locationCondition})
             AND rating >= ? 
+            AND (${usernameCondition})
+            AND (${locationCondition})
         `;
         const [count] = await queryAsync(attractionsQuery, queryParams);
         return count[0].count;
@@ -154,7 +156,6 @@ async function addAttraction(name, city, lat, lng, revenue, theme, rating, photo
 
 module.exports = {
     getAttractions,
-    getAttractionsByRange,
     getAttractionsByRangeWithFilters,
     getAttractionsCountWithFilters,
     getAttractionByID,

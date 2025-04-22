@@ -14,5 +14,6 @@ require('./routers/userRouter')(app);
 require('./routers/locationRouter')(app);
 require('./routers/stripeRouter')(app);
 require('./routers/orderRouter')(app);
+require('./routers/gcsRouter')(app);
 
 module.exports = app

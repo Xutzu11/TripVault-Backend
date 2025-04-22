@@ -20,21 +20,7 @@ module.exports = (app) => {
         }
     });
 
-    app.get("/api/events/count", async (req, res) => {
-        try {
-            const token = req.header('Authorization');
-            const userVerification = await verifyUser(token);
-            if (userVerification == null) {
-                res.status(401).send('Access denied');
-                return;
-            }
-            const [result] = await getEventsCount();
-            res.status(200).json(result.count);
-        } catch (error) {
-            console.error('Error retrieving events:', error);
-            res.status(500).send('Internal Server Error');
-        }
-    });
+
 
     app.get("/api/events-attraction/:attractionID", async (req, res) => {
         try {
@@ -84,22 +70,7 @@ module.exports = (app) => {
         }
     });
 
-    app.get("/api/events/from/:start/to/:end", async (req, res) => {
-        try {
-            const token = req.header('Authorization');
-            const userVerification = await verifyUser(token);
-            if (userVerification == null) {
-                res.status(401).send('Access denied');
-                return;
-            }
-            const {sortopt} = req.query;
-            const events = await getEventsByRange(sortopt, req.params.start, req.params.end);
-            res.status(200).json(events);
-        } catch (error) {
-            console.error('Error retrieving events:', error);
-            res.status(500).send('Internal Server Error');
-        }
-    });
+
 
     app.get("/api/event/:id", async (req, res) => {
         try {
@@ -268,10 +239,10 @@ module.exports = (app) => {
         res.status(200).send('Event added successfully');
     });
 
-    app.get("/api/events/filtered/from/:start/to/:end", async (req, res) => {
+    app.get("/api/events/from/:start/to/:end", async (req, res) => {
         try {
             const token = req.header('Authorization');
-            const userVerification = await verifyUser(token);
+            const userVerification = await verifyLoggedIn(token);
             if (!userVerification) return res.status(401).send("Access denied");
     
             const {
@@ -286,6 +257,7 @@ module.exports = (app) => {
             const end = parseInt(req.params.end);
     
             const events = await getFilteredEvents(
+                (userVerification.role == 'admin' ? userVerification.username : null),
                 name,
                 parseFloat(price),
                 parseInt(state),
@@ -302,10 +274,10 @@ module.exports = (app) => {
         }
     });
     
-    app.get("/api/events/filtered/count", async (req, res) => {
+    app.get("/api/events/count", async (req, res) => {
         try {
             const token = req.header('Authorization');
-            const userVerification = await verifyUser(token);
+            const userVerification = await verifyLoggedIn(token);
             if (!userVerification) return res.status(401).send("Access denied");
     
             const {
@@ -316,6 +288,7 @@ module.exports = (app) => {
             } = req.query;
     
             const count = await getFilteredEventsCount(
+                (userVerification.role == 'admin' ? userVerification.username : null),
                 name,
                 parseFloat(price),
                 parseInt(state),

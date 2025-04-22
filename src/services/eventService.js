@@ -149,7 +149,7 @@ async function addEvent(newName, newDescr, newPrice, newMID, newStartDate, newEn
     });
 }
 
-async function getFilteredEvents(name, maxPrice, state, city, sortOpt, start, end) {
+async function getFilteredEvents(username, name, maxPrice, state, city, sortOpt, start, end) {
     return new Promise((resolve, reject) => {
         const limit = end - start + 1;
         const offset = start - 1;
@@ -162,6 +162,10 @@ async function getFilteredEvents(name, maxPrice, state, city, sortOpt, start, en
             WHERE 1=1
         `;
 
+        if (username) {
+            query += ' AND a.username = ?';
+            values.push(username);
+        }
         if (name) {
             query += ' AND e.name LIKE ?';
             values.push(`%${name}%`);
@@ -190,7 +194,7 @@ async function getFilteredEvents(name, maxPrice, state, city, sortOpt, start, en
     });
 }
 
-async function getFilteredEventsCount(name, maxPrice, state, city) {
+async function getFilteredEventsCount(username, name, maxPrice, state, city) {
     return new Promise((resolve, reject) => {
         const values = [];
 
@@ -201,6 +205,10 @@ async function getFilteredEventsCount(name, maxPrice, state, city) {
             WHERE 1=1
         `;
 
+        if (username) {
+            query += ' AND a.username = ?';
+            values.push(username);
+        }
         if (name) {
             query += ' AND e.name LIKE ?';
             values.push(`%${name}%`);

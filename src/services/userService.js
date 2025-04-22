@@ -28,10 +28,10 @@ async function getUser(username) {
     });
 }
 
-async function createUser(username, fname, lname, email, password) {
+async function createUser(username, fname, lname, email, role, password) {
     return new Promise((resolve, reject) => {
-        const query = "INSERT INTO users (username, first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?, 'user')";
-        con.query(query, [username, fname, lname, email, password], (err, result) => {
+        const query = "INSERT INTO users (username, first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?, ?)";
+        con.query(query, [username, fname, lname, email, password, role], (err, result) => {
             if (err) {
                 reject(err);
             } else {
@@ -107,8 +107,8 @@ async function verifyUser(token) {
 }
 
 async function verifyLoggedIn(token) {
-    var user = verifyUser(token);
-    var admin = verifyAdmin(token);
+    var user = await verifyUser(token);
+    var admin = await verifyAdmin(token);
     if (user) {
         return user;
     }
