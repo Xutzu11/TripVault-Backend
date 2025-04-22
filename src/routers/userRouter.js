@@ -11,7 +11,6 @@ module.exports = (app) => {
             const Username = req.params.username;
             const Password = req.params.password;
             const user = await getUser(Username);
-            console.log(user);
             if (user == null) {
                 res.status(401).send('Username doesn\'t exist.');
                 return;

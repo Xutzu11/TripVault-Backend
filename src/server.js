@@ -1,12 +1,27 @@
+const express = require('express')
+const cors = require('cors')
 const https = require('https')
-const skt = require('socket.io')
 const fs = require('fs')
 const path = require('path')
-const PORT = 4000;
-const app = require('./app')
-const con = require('./database/db')
+const skt = require('socket.io')
+const PORT = 4000
+const app = express()
 
-/// Connection to server
+app.use(express.json());
+app.use(cors({
+    origin: 'https://localhost:3000'
+}));
+
+require('./routers/attractionRouter')(app);
+require('./routers/eventRouter')(app);
+require('./routers/userRouter')(app);
+require('./routers/locationRouter')(app);
+require('./routers/stripeRouter')(app);
+require('./routers/orderRouter')(app);
+require('./routers/gcsRouter')(app);
+
+// TODO: make this work 
+/*
 const httpsServer = https.createServer({
     key: fs.readFileSync(path.join(__dirname, 'cert', 'key.pem')),
     cert: fs.readFileSync(path.join(__dirname, 'cert', 'cert.pem'))
@@ -18,19 +33,11 @@ const server = new skt.Server(httpsServer, {
     }
 })
 
-app.get("/api/status", (req, res) => {
-    res.status(200).send("Server is online");
-});
+httpsServer.listen(PORT);
+*/
 
-server.on('connection', (socket) => {
-    console.log("client connected");
-    socket.on('disconnect', () => {
-         console.log("client disconnected");
-    })
-});
-
-//httpsServer.listen(PORT);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
+module.exports = app
