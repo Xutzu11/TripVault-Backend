@@ -141,14 +141,27 @@ async function updateAttraction(id, newName, newCity, newLat, newLng, newRevenue
     });
 }
 
-async function addAttraction(name, city, lat, lng, revenue, theme, rating, photo_path) {
+async function addAttraction(username, name, theme, revenue, rating, city_id, latitude, longitude, photo_path) {
     return new Promise((resolve, reject) => {
-        const query = 'INSERT INTO attractions (name, city, latitude, longitude, revenue, theme, rating, photo_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-        con.query(query, [name, city, lat, lng, revenue, theme, rating, photo_path], (err, result) => {
+        const query = 'INSERT INTO attractions (username, name, city_id, theme, revenue, rating, latitude, longitude, photo_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        con.query(query, [username, name, city_id, theme, revenue, rating, latitude, longitude, photo_path], (err, result) => {
             if (err) {
                 reject(err);
             } else {
                 resolve(result.affectedRows);
+            }
+        });
+    });
+}
+
+async function checkAttractionExists(id) {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT * FROM attractions WHERE id = ?';
+        con.query(query, [id], (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result.length !== 0);
             }
         });
     });
@@ -161,5 +174,6 @@ module.exports = {
     getAttractionByID,
     deleteAttraction,
     updateAttraction,
-    addAttraction
+    addAttraction,
+    checkAttractionExists
 };

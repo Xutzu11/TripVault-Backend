@@ -24,7 +24,46 @@ async function getCitiesByState(state_id) {
     });
 }
 
+async function getCityByID(id) {
+    return new Promise((resolve, reject) => {
+        con.query(`SELECT * FROM cities WHERE id = ${id}`, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result);
+            }
+        });
+    });
+}
+
+async function getStateByCityID(id) {
+    return new Promise((resolve, reject) => {
+        con.query(`SELECT * FROM states WHERE id = (SELECT state_id FROM cities WHERE id = ${id})`, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result);
+            }
+        });
+    });
+}
+
+async function checkCityExists(id) {
+    return new Promise((resolve, reject) => {
+        con.query(`SELECT * FROM cities WHERE id = ${id}`, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result.length !== 0);
+            }
+        });
+    });
+}
+
 module.exports = {
     getCitiesByState,
-    getStates
+    getStates,
+    getCityByID,
+    getStateByCityID,
+    checkCityExists
 };

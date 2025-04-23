@@ -141,3 +141,4 @@ dbconfig.json
 stripe.json
 web.json
 bucket.json
+gcs.json

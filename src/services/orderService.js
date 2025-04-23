@@ -2,6 +2,7 @@ const sharp = require('sharp')
 const QRCode = require('qrcode');
 const TextToSVG = require('text-to-svg');
 const path = require('path');
+const fs = require('fs');
 
 async function generateQR(text) {
     return await QRCode.toBuffer(text, {
@@ -33,7 +34,7 @@ async function generateSVG(text, fontSize) {
     }
 }
 
-async function createTicket(customerName, event, attraction, ticketId, outputPath) {
+async function createTicket(customerName, event, attraction, city, state, ticketId, outputPath) {
     const ticketTemplatePath = path.resolve(__dirname, '../../assets/ticket_template.png');
     const ticket = sharp(ticketTemplatePath);
     
@@ -46,7 +47,7 @@ async function createTicket(customerName, event, attraction, ticketId, outputPat
     const museumImageBuffer = await generateSVG("Attraction: " + attraction.name, 40);
     const museumOverlay = { input: museumImageBuffer, top: 200, left: 66};
 
-    const locationImageBuffer = await generateSVG("Location: " + attraction.state + ", " + attraction.city, 40);
+    const locationImageBuffer = await generateSVG("Location: " + city + ", " + state, 40);
     const locationOverlay = { input: locationImageBuffer, top: 260, left: 66};
 
     const exhibitionImageBuffer = await generateSVG("Event: " + event.name, 40);
@@ -68,6 +69,18 @@ async function createTicket(customerName, event, attraction, ticketId, outputPat
                 priceOverlay
             ])
             .toFile(outputPath);
+}
+
+function deleteTicket(ticketPath) {
+    try {
+        if (fs.existsSync(ticketPath)) {
+            fs.unlinkSync(ticketPath);
+        } else {
+            console.warn(`File not found: ${ticketPath}`);
+        }
+    } catch (err) {
+        console.error(`Error deleting ticket at ${ticketPath}:`, err);
+    }
 }
 
 function mailContent(userName, itemsWithAttractions) {
@@ -97,5 +110,6 @@ function mailContent(userName, itemsWithAttractions) {
 
 module.exports = {
     mailContent,
+    deleteTicket,
     createTicket
 }

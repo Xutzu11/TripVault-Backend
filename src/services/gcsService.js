@@ -2,15 +2,37 @@
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const buckets = require('../../configs/bucket.json');
 
-// Update the path to your service account key
-const keyFilename = path.join(__dirname, '../../configs/bucket.json');
+const keyFilename = path.join(__dirname, '../../configs/gcs.json');
 const storage = new Storage({ keyFilename });
-const bucket = storage.bucket('tripvault');
+const ticketBucket = storage.bucket(buckets.TICKETS_BUCKET_NAME);
+const attractionBucket = storage.bucket(buckets.ATTRACTIONS_BUCKET_NAME);
 
-const uploadFileToGCS = async (file) => {
+const uploadTicketToGCS = async (file) => {
     return new Promise((resolve, reject) => {
-        const blob = bucket.file(`tickets/${uuidv4()}-${file.originalname}`);
+        const blob = ticketBucket.file(`${file.originalname}`);
+        const blobStream = blob.createWriteStream({
+            resumable: false,
+            contentType: file.mimetype,
+        });
+
+        blobStream.on('error', (err) => {
+            reject(err);
+        });
+
+        blobStream.on('finish', () => {
+            const publicUrl = `${buckets.BASE_URL}/${ticketBucket.name}/${blob.name}`;
+            resolve(publicUrl);
+        });
+
+        blobStream.end(file.buffer);
+    });
+};
+
+const uploadAttractionToGCS = async (file) => {
+    return new Promise((resolve, reject) => {
+        const blob = attractionBucket.file(`${uuidv4()}.jpg`);
         const blobStream = blob.createWriteStream({
             resumable: false,
             contentType: file.mimetype,
@@ -21,16 +43,11 @@ const uploadFileToGCS = async (file) => {
         });
 
         blobStream.on('finish', async () => {
-            try {
-                const publicUrl = `https://storage.googleapis.com/${bucket.name}/tickets/${blob.name}`;
-                resolve(publicUrl);
-            } catch (err) {
-                reject(err);
-            }
+            resolve(blob.name);
         });
 
         blobStream.end(file.buffer);
     });
 };
 
-module.exports = { uploadFileToGCS };
+module.exports = { uploadTicketToGCS, uploadAttractionToGCS };

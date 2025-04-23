@@ -136,10 +136,10 @@ async function eventNotExist(id) {
     });
 }
 
-async function addEvent(newName, newDescr, newPrice, newMID, newStartDate, newEndDate) {
+async function addEvent(name, description, price, attraction_id, start_date, end_date) {
     return new Promise((resolve, reject) => {
-        const query = 'INSERT INTO events (name, description, price, mid, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)';
-        con.query(query, [newName, newDescr, newPrice, newMID, newStartDate, newEndDate], (err, result) => {
+        const query = 'INSERT INTO events (name, description, price, attraction_id, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)';
+        con.query(query, [name, description, price, attraction_id, start_date, end_date], (err, result) => {
             if (err) {
                 reject(err);
             } else {
@@ -149,7 +149,7 @@ async function addEvent(newName, newDescr, newPrice, newMID, newStartDate, newEn
     });
 }
 
-async function getFilteredEvents(username, name, maxPrice, state, city, sortOpt, start, end) {
+async function getFilteredEvents(attractionID, username, name, maxPrice, state, city, sortOpt, start, end) {
     return new Promise((resolve, reject) => {
         const limit = end - start + 1;
         const offset = start - 1;
@@ -162,6 +162,10 @@ async function getFilteredEvents(username, name, maxPrice, state, city, sortOpt,
             WHERE 1=1
         `;
 
+        if (attractionID) {
+            query += ' AND e.attraction_id = ?';
+            values.push(attractionID);
+        }
         if (username) {
             query += ' AND a.username = ?';
             values.push(username);
@@ -194,7 +198,7 @@ async function getFilteredEvents(username, name, maxPrice, state, city, sortOpt,
     });
 }
 
-async function getFilteredEventsCount(username, name, maxPrice, state, city) {
+async function getFilteredEventsCount(attractionID, username, name, maxPrice, state, city) {
     return new Promise((resolve, reject) => {
         const values = [];
 
@@ -205,6 +209,10 @@ async function getFilteredEventsCount(username, name, maxPrice, state, city) {
             WHERE 1=1
         `;
 
+        if (attractionID) {
+            query += ' AND e.attraction_id = ?';
+            values.push(attractionID);
+        }
         if (username) {
             query += ' AND a.username = ?';
             values.push(username);
@@ -232,6 +240,20 @@ async function getFilteredEventsCount(username, name, maxPrice, state, city) {
     });
 }
 
+async function checkEventAlreadyExist(name, price, start_date, end_date, attraction_id) {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT * FROM events WHERE name = ? AND attraction_id = ? AND price = ? AND start_date = ? AND end_date = ?';
+        const values = [name, attraction_id, price, start_date, end_date];
+        con.query(query, values, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result.length !== 0);
+            }
+        });
+    });
+}
+
 module.exports = {
     getEvents,
     getEventsCount,
@@ -245,5 +267,6 @@ module.exports = {
     eventNotExist,
     addEvent,
     getFilteredEvents,
-    getFilteredEventsCount
+    getFilteredEventsCount,
+    checkEventAlreadyExist
 };
