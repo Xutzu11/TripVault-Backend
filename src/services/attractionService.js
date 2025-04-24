@@ -128,10 +128,17 @@ async function deleteAttraction(id) {
     });
 }
 
-async function updateAttraction(id, newName, newCity, newLat, newLng, newRevenue, newTheme, newRating, newPhotoPath) {
+async function updateAttraction(attraction_id, name, theme, revenue, rating, city_id, latitude, longitude, photo_path) {
     return new Promise((resolve, reject) => {
-        const query = 'UPDATE attractions SET name = ?, city = ?, latitude = ?, longitude = ?, revenue = ?, theme = ?, rating = ?, photo_path = ? WHERE id = ?';
-        con.query(query, [newName, newCity, newLat, newLng, newRevenue, newTheme, newRating, newPhotoPath, id], (err, result) => {
+        var query = 'UPDATE attractions SET name = ?, theme = ?, city_id = ?, revenue = ?, rating = ?, latitude = ?, longitude = ?';
+        values = [name, theme, city_id, revenue, rating, latitude, longitude];
+        if (photo_path != null) {
+            query += ', photo_path = ?';
+            values.push(photo_path);
+        }
+        query += ' WHERE id = ?';
+        values.push(attraction_id);
+        con.query(query, values, (err, result) => {
             if (err) {
                 reject(err);
             } else {

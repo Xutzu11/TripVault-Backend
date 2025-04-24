@@ -46,7 +46,7 @@ module.exports = (app) => {
   app.get("/api/event/:id", async (req, res) => {
     try {
       const token = req.header("Authorization");
-      const userVerification = await verifyUser(token);
+      const userVerification = await verifyAdmin(token);
       if (userVerification == null) {
         res.status(401).send("Access denied");
         return;
@@ -67,7 +67,7 @@ module.exports = (app) => {
   app.delete("/api/event/delete/:id", async (req, res) => {
     try {
       const token = req.header("Authorization");
-      const userVerification = await verifyUser(token);
+      const userVerification = await verifyAdmin(token);
       if (userVerification == null) {
         res.status(401).send("Access denied");
         return;
@@ -85,96 +85,77 @@ module.exports = (app) => {
     }
   });
 
-  app.put("/api/event/edit/:id", async (req, res) => {
-    const { name, description, price, attraction_id, start_date, end_date } =
-      req.query;
-    const event_id = parseInt(req.params.id);
-    if (isNaN(event_id) || event_id < 0) {
-      console.error("Error 400 updating the event:");
-      res.status(400).send("Invalid ID error");
-      return;
-    }
+  app.put("/api/event/edit/:id", upload.none(), async (req, res) => {
+    const { name, description, price, startDate, endDate, attractionId } =
+      req.body;
+    const eventId = req.params.id;
     if (
       !name ||
       !description ||
       isNaN(price) ||
       price < 0 ||
-      !attraction_id ||
-      !start_date ||
-      !end_date
+      !attractionId ||
+      !startDate ||
+      !endDate
     ) {
-      console.error("Error 401 updating the event");
-      res.status(401).send("Invalid input error");
+      res.status(401).send("Invalid Input Error");
       return;
     }
     try {
       const token = req.header("Authorization");
-      const userVerification = await verifyUser(token);
+      const userVerification = await verifyAdmin(token);
       if (userVerification == null) {
-        res.status(401).send("Access denied");
+        res.status(401).send("Access Denied");
         return;
       }
-      const attractionExists = await attractionNotExists(attraction_id);
-      if (attractionExists) {
-        console.error("Error 405 updating the event");
-        res.status(405).send("Attraction doesn't exist error");
+      const attractionExists = await checkAttractionExists(attractionId);
+      if (!attractionExists) {
+        res.status(406).send("Attraction Doesn't Exist Error");
         return;
       }
     } catch (error) {
-      console.error("Error retrieving events:", error);
+      console.error("Error adding event:", error);
       res.status(500).json("Internal Server Error");
       return;
     }
     try {
-      const eventExists = await eventAlreadyExist(
-        event_id,
+      const eventExists = await checkEventAlreadyExist(
         name,
-        attraction_id
+        price,
+        startDate,
+        endDate,
+        attractionId
       );
       if (eventExists) {
-        console.error("Error 406 updating the event");
-        res.status(406).send("Event exists error");
+        res.status(405).send("Event Exists Error");
         return;
       }
     } catch (error) {
-      console.error("Error retrieving events:", error);
-      res.status(500).json("Internal Server Error");
-      return;
-    }
-    try {
-      const eventNotExists = await eventNotExist(event_id);
-      if (eventNotExists) {
-        console.error("Error 407 updating the event");
-        res.status(407).send("Event doesn't exist error");
-        return;
-      }
-    } catch (error) {
-      console.error("Error retrieving events:", error);
+      console.error("Error updating event:", error);
       res.status(500).json("Internal Server Error");
       return;
     }
     try {
       await updateEvent(
-        event_id,
+        eventId,
         name,
         description,
         price,
-        attraction_id,
-        start_date,
-        end_date
+        attractionId,
+        startDate,
+        endDate
       );
     } catch (error) {
       console.error("Error updating event:", error);
       res.status(500).json("Internal Server Error");
       return;
     }
-    res.status(200).send("Event updated successfully");
+    res.status(200).send("Event Updated Successfully");
   });
 
   app.post("/api/event/add", upload.none(), async (req, res) => {
     const { name, description, price, startDate, endDate, attractionId } =
       req.body;
-    console.log(req.body);
     if (
       !name ||
       !description ||

@@ -10,7 +10,7 @@ const {
 const { verifyLoggedIn, verifyAdmin } = require("../services/userService");
 const { uploadAttractionToGCS } = require("../services/gcsService");
 const multer = require("multer");
-const { checkCityExists } = require("../services/locationService");
+const { checkCityExists, getStateByCityID } = require("../services/locationService");
 const upload = multer({ storage: multer.memoryStorage() });
 
 module.exports = (app) => {
@@ -94,9 +94,14 @@ module.exports = (app) => {
       const attraction = await getAttractionByID(req.params.id);
       if (attraction.length === 0) {
         res.status(404).json("Attraction not found");
+      } 
+      const state = await getStateByCityID(attraction[0].city_id);
+      if (state.length === 0) {
+        res.status(404).json("State not found");
       } else {
-        res.status(200).json(attraction[0]);
+        attraction[0].state = state[0].id;
       }
+      res.status(200).json(attraction[0]);
     } catch (error) {
       console.error("Error retrieving attraction:", error);
       res.status(500).send("Internal Server Error");
@@ -106,7 +111,7 @@ module.exports = (app) => {
   app.delete("/api/attraction/delete/:id", async (req, res) => {
     try {
       const token = req.header("Authorization");
-      const userVerification = await verifyLoggedIn(token);
+      const userVerification = await verifyAdmin(token);
       if (userVerification == null) {
         res.status(401).send("Access denied");
         return;
@@ -123,57 +128,56 @@ module.exports = (app) => {
     }
   });
 
-  app.put("/api/attraction/edit/:id", async (req, res) => {
-    const attractionID = parseInt(req.params.id);
-    const {
-      name,
-      city,
-      latitude,
-      longitude,
-      revenue,
-      theme,
-      rating,
-      photo_path,
-    } = req.body;
+  app.put("/api/attraction/edit/:id", upload.single("photo"), async (req, res) => {
+    const { name, theme, revenue, rating, city_id, latitude, longitude } =
+      req.body;
+    const photo = req.file;
     if (
-      name == null ||
-      city == null ||
-      latitude == null ||
-      longitude == null ||
-      revenue == null ||
-      theme == null ||
-      rating == null ||
-      photo_path == null
+      !name ||
+      !theme ||
+      isNaN(revenue) ||
+      revenue < 0 ||
+      isNaN(rating) ||
+      rating < 1 ||
+      rating > 5 ||
+      !city_id ||
+      isNaN(latitude) ||
+      isNaN(longitude)
     ) {
-      res.status(400).send("All fields are required");
-      return;
-    }
-    if (isNaN(attractionID) || attractionID < 0) {
-      res.status(400).send("Invalid ID error");
+      res.status(401).send("Invalid Input Error");
       return;
     }
 
     try {
       const token = req.header("Authorization");
-      const userVerification = await verifyLoggedIn(token);
+      const userVerification = await verifyAdmin(token);
       if (userVerification == null) {
         res.status(401).send("Access denied");
         return;
       }
+
+      const cityExists = await checkCityExists(city_id);
+      if (!cityExists) {
+        res.status(406).send("City Doesn't Exist Error");
+        return;
+      }
+
+      const photo_path = (photo) ? await uploadAttractionToGCS(photo) : null;
       await updateAttraction(
-        attractionID,
+        req.params.id,
         name,
-        city,
-        latitude,
-        longitude,
-        revenue,
         theme,
-        rating,
+        parseFloat(revenue),
+        parseFloat(rating),
+        city_id,
+        parseFloat(latitude),
+        parseFloat(longitude),
         photo_path
       );
-      res.status(200).send("Attraction updated successfully");
+
+      res.status(200).send("Attraction added successfully");
     } catch (error) {
-      console.error("Error updating attraction:", error);
+      console.error("Error adding attraction:", error);
       res.status(500).json("Internal Server Error");
     }
   });

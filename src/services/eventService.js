@@ -110,10 +110,10 @@ async function deleteEvent(id) {
     });
 }
 
-async function updateEvent(id, newName, newDescr, newPrice, newMID, newStartDate, newEndDate) {
+async function updateEvent(id, newName, newDescr, newPrice, newAttractionID, newStartDate, newEndDate) {
     return new Promise((resolve, reject) => {
-        const query = 'UPDATE events SET name = ?, description = ?, price = ?, mid = ?, start_date = ?, end_date = ? WHERE id = ?';
-        con.query(query, [newName, newDescr, newPrice, newMID, newStartDate, newEndDate, id], (err, result) => {
+        const query = 'UPDATE events SET name = ?, description = ?, price = ?, attraction_id = ?, start_date = ?, end_date = ? WHERE id = ?';
+        con.query(query, [newName, newDescr, newPrice, newAttractionID, newStartDate, newEndDate, id], (err, result) => {
             if (err) {
                 reject(err);
             } else {
