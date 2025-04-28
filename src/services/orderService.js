@@ -72,11 +72,40 @@ async function createTicket(customerName, event, attraction, city, state, ticket
             .toFile(outputPath);
 }
 
-async function addTicket(username, event_id, uid) {
+async function addTicket(username, event_id, id) {
     return new Promise((resolve, reject) => {
-        const query = 'INSERT INTO tickets (username, event_id, uid) VALUES (?, ?, ?)';
-        const values = [username, event_id, uid];
+        const query = 'INSERT INTO tickets (username, event_id, id, status) VALUES (?, ?, ?, ?)';
+        const status = 'valid';
+        const values = [username, event_id, id, status];
         con.query(query, values, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result.affectedRows);
+            }
+        });
+    }
+)}
+
+async function validateTicket(ticketId) {
+    return new Promise((resolve, reject) => {
+        const query = 'UPDATE tickets SET status = ? WHERE id = ?';
+        const status = 'used';
+        con.query(query, [status, ticketId], (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result.affectedRows);
+            }
+        });
+    }
+)}
+
+async function expireTicket(ticketId) {
+    return new Promise((resolve, reject) => {
+        const query = 'UPDATE tickets SET status = ? WHERE id = ?';
+        const status = 'expired';
+        con.query(query, [status, ticketId], (err, result) => {
             if (err) {
                 reject(err);
             } else {
@@ -88,7 +117,7 @@ async function addTicket(username, event_id, uid) {
 
 async function getTicket(ticketId) {
     return new Promise((resolve, reject) => {
-        const query = 'SELECT * FROM tickets WHERE ticket_id = ?';
+        const query = 'SELECT * FROM tickets WHERE id = ?';
         con.query(query, [ticketId], (err, result) => {
             if (err) {
                 reject(err);
@@ -102,7 +131,7 @@ async function getTicket(ticketId) {
 
 async function deleteTicket(ticketId) {
     return new Promise((resolve, reject) => {
-        const query = 'DELETE FROM tickets WHERE ticket_id = ?';
+        const query = 'DELETE FROM tickets WHERE id = ?';
         con.query(query, [ticketId], (err, result) => {
             if (err) {
                 reject(err);
@@ -156,5 +185,7 @@ module.exports = {
     createTicket,
     addTicket,
     getTicket,
+    validateTicket,
+    expireTicket,
     deleteTicket
 }

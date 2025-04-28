@@ -1,6 +1,6 @@
-const {createTicket, addTicket, deleteLocalTicket} = require("../services/orderService");
+const {createTicket, addTicket, validateTicket, getTicket, deleteLocalTicket} = require("../services/orderService");
 const {mailContent} = require("../services/orderService");
-const {verifyUser} = require("../services/userService");
+const {verifyUser, verifyAdmin} = require("../services/userService");
 const {getAttractionByID} = require("../services/attractionService");
 const { transporter, email } = require("../services/emailService");
 const fs = require('fs');
@@ -91,7 +91,18 @@ module.exports = (app) => {
 
     app.get("/api/ticket/:ticketId", async (req, res) => {
         try {
+            const token = req.header('Authorization');
+            const userVerification = await verifyAdmin(token);
+            if (userVerification == null) {
+                res.status(401).send('Access denied');
+                return;
+            }
             const ticketId = req.params.ticketId;
+            const ticket = await getTicket(ticketId);
+            if (!ticket) {
+                res.status(404).send('Ticket not found');
+                return;
+            }
             const options = {
                 version: 'v4',
                 action: 'read',
@@ -108,7 +119,10 @@ module.exports = (app) => {
                 .bucket(buckets.TICKETS_BUCKET_NAME)
                 .file(ticketId + '.png')
                 .getSignedUrl(options);
-            res.status(200).send(url);
+            res.status(200).json({
+                ticket: ticket,
+                url: url
+            });
         } catch (error) {
             console.error('Error fetching ticket:', error);
             res.status(500).send('Internal Server Error');
@@ -117,6 +131,12 @@ module.exports = (app) => {
 
     app.delete("/api/ticket/:ticketId", async (req, res) => {
         try {
+            const token = req.header('Authorization');
+            const userVerification = await verifyAdmin(token);
+            if (userVerification == null) {
+                res.status(401).send('Access denied');
+                return;
+            }
             const ticketId = req.params.ticketId;
             const ticket = await getTicket(ticketId);
             if (ticket) {
@@ -127,6 +147,55 @@ module.exports = (app) => {
             }
         } catch (error) {
             console.error('Error deleting ticket:', error);
+            res.status(500).send('Internal Server Error');
+        }
+    });
+
+    app.put("/api/ticket/validate/:ticketId", async (req, res) => {
+        try {
+            const token = req.header('Authorization');
+            const userVerification = await verifyAdmin(token);
+            if (userVerification == null) {
+                res.status(401).send('Access denied');
+                return;
+            }
+            const ticketId = req.params.ticketId;
+            const ticket = await getTicket(ticketId);
+            console.log(ticket);
+            if (ticket) {
+                const result = await validateTicket(ticketId);
+                if (result) {
+                    res.status(200).send('Ticket validated successfully');
+                } else {
+                    res.status(400).send('Ticket already validated or expired');
+                }
+            } else {
+                res.status(404).send('Ticket not found');
+            }
+        } catch (error) {
+            console.error('Error validating ticket:', error);
+            res.status(500).send('Internal Server Error');
+        }
+    });
+
+    app.put("/api/ticket/expire/:ticketId", async (req, res) => {
+        try {
+            const token = req.header('Authorization');
+            const userVerification = await verifyAdmin(token);
+            if (userVerification == null) {
+                res.status(401).send('Access denied');
+                return;
+            }
+            const ticketId = req.params.ticketId;
+            const ticket = await getTicket(ticketId);
+            if (ticket) {
+                await expireTicket(ticketId);
+                res.status(200).send('Ticket expired successfully');
+            } else {
+                res.status(404).send('Ticket not found');
+            }
+        } catch (error) {
+            console.error('Error expiring ticket:', error);
             res.status(500).send('Internal Server Error');
         }
     });
