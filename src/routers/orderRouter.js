@@ -1,4 +1,4 @@
-const {createTicket, deleteTicket} = require("../services/orderService");
+const {createTicket, addTicket, deleteLocalTicket} = require("../services/orderService");
 const {mailContent} = require("../services/orderService");
 const {verifyUser} = require("../services/userService");
 const {getAttractionByID} = require("../services/attractionService");
@@ -8,6 +8,10 @@ const crypto = require('crypto');
 const path = require("path");
 const { uploadTicketToGCS } = require("../services/gcsService");
 const { getCityByID, getStateByCityID } = require("../services/locationService");
+const {Storage} = require('@google-cloud/storage');
+const keyFilename = path.join(__dirname, '../../configs/gcs.json');
+const storage = new Storage({ keyFilename });
+const buckets = require('../../configs/bucket.json');
 
 module.exports = (app) => {
     app.post("/api/purchase", async (req, res) => {
@@ -30,7 +34,8 @@ module.exports = (app) => {
                 const ticketPath = path.resolve(__dirname, `../../tickets/${ticketId}.png`);
             
                 await createTicket(fullName, item.event, attraction[0], city[0].name, state[0].name, ticketId, ticketPath);
-                        
+                await addTicket(userVerification.username, item.event.id, ticketId);
+
                 ticketInfoList.push({
                     item,
                     attraction: attraction[0],
@@ -75,11 +80,53 @@ module.exports = (app) => {
                     mimetype: 'image/png',
                     buffer: ticketBuffer,
                 });
-                deleteTicket(info.ticketPath);
+                deleteLocalTicket(info.ticketPath);
             }
 
         } catch (error) {
             console.error('Error purchasing:', error);
+            res.status(500).send('Internal Server Error');
+        }
+    });
+
+    app.get("/api/ticket/:ticketId", async (req, res) => {
+        try {
+            const ticketId = req.params.ticketId;
+            const options = {
+                version: 'v4',
+                action: 'read',
+                expires: Date.now() + 2 * 60 * 1000, // 2 minutes
+            };
+
+            const [exists] = await storage.bucket(buckets.TICKETS_BUCKET_NAME).file(ticketId + '.png').exists();
+            if (!exists) {
+                res.status(404).send('Ticket not found');
+                return;
+            }
+
+            const [url] = await storage
+                .bucket(buckets.TICKETS_BUCKET_NAME)
+                .file(ticketId + '.png')
+                .getSignedUrl(options);
+            res.status(200).send(url);
+        } catch (error) {
+            console.error('Error fetching ticket:', error);
+            res.status(500).send('Internal Server Error');
+        }
+    });
+
+    app.delete("/api/ticket/:ticketId", async (req, res) => {
+        try {
+            const ticketId = req.params.ticketId;
+            const ticket = await getTicket(ticketId);
+            if (ticket) {
+                await deleteTicket(ticketId);
+                res.status(200).send('Ticket deleted successfully');
+            } else {
+                res.status(404).send('Ticket not found');
+            }
+        } catch (error) {
+            console.error('Error deleting ticket:', error);
             res.status(500).send('Internal Server Error');
         }
     });

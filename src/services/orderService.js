@@ -3,6 +3,7 @@ const QRCode = require('qrcode');
 const TextToSVG = require('text-to-svg');
 const path = require('path');
 const fs = require('fs');
+const con = require('../database/db');
 
 async function generateQR(text) {
     return await QRCode.toBuffer(text, {
@@ -71,7 +72,48 @@ async function createTicket(customerName, event, attraction, city, state, ticket
             .toFile(outputPath);
 }
 
-function deleteTicket(ticketPath) {
+async function addTicket(username, event_id, uid) {
+    return new Promise((resolve, reject) => {
+        const query = 'INSERT INTO tickets (username, event_id, uid) VALUES (?, ?, ?)';
+        const values = [username, event_id, uid];
+        con.query(query, values, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result.affectedRows);
+            }
+        });
+    }
+)}
+
+async function getTicket(ticketId) {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT * FROM tickets WHERE ticket_id = ?';
+        con.query(query, [ticketId], (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                if (result.length == 0) resolve(null);
+                else resolve({...result[0]});
+            }
+        });
+    }
+)}
+
+async function deleteTicket(ticketId) {
+    return new Promise((resolve, reject) => {
+        const query = 'DELETE FROM tickets WHERE ticket_id = ?';
+        con.query(query, [ticketId], (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result.affectedRows);
+            }
+        });
+    }
+)}
+
+function deleteLocalTicket(ticketPath) {
     try {
         if (fs.existsSync(ticketPath)) {
             fs.unlinkSync(ticketPath);
@@ -92,7 +134,7 @@ function mailContent(userName, itemsWithAttractions) {
         message += `<li>
                         <strong>${item.event.name}, at ${attraction.name}</strong><br>
                         ${item.event.description}<br>
-                        <img src="${attraction.photoPath}" alt="${item.event.name}" style="width: 100px; height: auto;"><br>
+                        <img src="https://storage.googleapis.com/tripvault-attractions/${attraction.photo_path}" alt="${item.event.name}" style="width: 100px; height: auto;"><br>
                         Quantity: ${item.quantity}<br>
                         Total Price: $${(item.quantity * item.event.price).toFixed(2)}<br>
                         <p style="font-style: italic;">Available from ${new Date(item.event.startDate).toLocaleDateString()} until ${new Date(item.event.endDate).toLocaleDateString()}</p>
@@ -103,13 +145,16 @@ function mailContent(userName, itemsWithAttractions) {
     message += '<strong>You will find the tickets attached to this email.</strong><br><br>'
     message += `<p>We hope you enjoy the events!</p>`;
     message += `<p style="font-style: italic;">Best regards,<br>Alex Ignat from Attractions Team</p><br>`;
-    message += '<img src="https://i.ibb.co/1f1WgXs/logo.png" alt="Logo" style="width: 100px; height: auto;">'
+    message += '<img src="https://storage.googleapis.com/tripvault/logo.png" alt="Logo" style="width: 100px; height: auto;">'
     message += `<br><br><br><p style="font-size: 10px;">This is an automatically generated email. Please do not reply to it.</p>`;
     return message;
 }
 
 module.exports = {
     mailContent,
-    deleteTicket,
-    createTicket
+    deleteLocalTicket,
+    createTicket,
+    addTicket,
+    getTicket,
+    deleteTicket
 }
