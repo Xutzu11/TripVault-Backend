@@ -12,6 +12,7 @@ const { uploadAttractionToGCS } = require("../services/gcsService");
 const multer = require("multer");
 const { checkCityExists, getStateByCityID } = require("../services/locationService");
 const upload = multer({ storage: multer.memoryStorage() });
+const ner = require("../../configs/ner.json");
 
 module.exports = (app) => {
   app.get("/api/attractions", async (req, res) => {

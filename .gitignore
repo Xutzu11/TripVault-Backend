@@ -142,4 +142,5 @@ stripe.json
 web.json
 bucket.json
 gcs.json
+ner.json
 tickets/

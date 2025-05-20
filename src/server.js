@@ -18,6 +18,7 @@ require('./routers/userRouter')(app);
 require('./routers/locationRouter')(app);
 require('./routers/stripeRouter')(app);
 require('./routers/orderRouter')(app);
+require('./routers/pathRouter')(app);
 
 // TODO: make this work 
 /*

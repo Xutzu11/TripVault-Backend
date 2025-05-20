@@ -3,7 +3,7 @@ const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const buckets = require('../../configs/bucket.json');
-
+const fs = require('fs');
 const keyFilename = path.join(__dirname, '../../configs/gcs.json');
 const storage = new Storage({ keyFilename });
 const ticketBucket = storage.bucket(buckets.TICKETS_BUCKET_NAME);
@@ -30,6 +30,20 @@ const uploadTicketToGCS = async (file) => {
     });
 };
 
+const uploadTicketToLocal = async (file) => {
+    return new Promise((resolve, reject) => {
+        const outputPath = path.resolve(__dirname, `../../tickets/${file.originalname}.png`);
+
+        fs.writeFile(outputPath, file.buffer, (err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(outputPath);
+            }
+        });
+    });
+};
+
 const uploadAttractionToGCS = async (file) => {
     return new Promise((resolve, reject) => {
         const blob = attractionBucket.file(`${uuidv4()}.jpg`);
@@ -50,4 +64,9 @@ const uploadAttractionToGCS = async (file) => {
     });
 };
 
-module.exports = { uploadTicketToGCS, uploadAttractionToGCS };
+const uploadTicketStrategies = {
+    gcs: uploadTicketToGCS,
+    local: uploadTicketToLocal,
+};
+
+module.exports = { uploadTicketStrategies, uploadAttractionToGCS };

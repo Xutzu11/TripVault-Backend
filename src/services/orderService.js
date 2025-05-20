@@ -4,7 +4,21 @@ const TextToSVG = require('text-to-svg');
 const path = require('path');
 const fs = require('fs');
 const con = require('../database/db');
+const bwipjs = require('bwip-js');
 
+async function generateBarcode(text) {
+    return await bwipjs.toBuffer({
+        bcid: 'code128',       
+        text: text,            
+        scale: 3,              
+        height: 15,            
+        includetext: true,     
+        textxalign: 'center',  
+        backgroundcolor: 'c4a773', 
+        textcolor: '191919',
+        rotate: 'L',    
+    });
+}
 async function generateQR(text) {
     return await QRCode.toBuffer(text, {
         type: 'png',
@@ -17,6 +31,24 @@ async function generateQR(text) {
         }
     });
 }
+
+async function generateText(text) {
+    const svg = `<svg width="800" height="100" xmlns="http://www.w3.org/2000/svg">
+        <text x="50%" y="50%" font-size="40" fill="#191919" text-anchor="middle" dominant-baseline="middle" font-family="Arial">${text}</text>
+    </svg>`;
+    return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+function codeGeneratorFactory(type) {
+    switch (type) {
+        case 'qr': return generateQR;
+        case 'barcode': return generateBarcode;
+        case 'text': return generateText;
+        default: throw new Error('Invalid ticket type');
+    }
+}
+
+const codeGenerator = codeGeneratorFactory('qr');
 
 async function generateSVG(text, fontSize) {
     const textToSVG = TextToSVG.loadSync();
@@ -39,7 +71,7 @@ async function createTicket(customerName, event, attraction, city, state, ticket
     const ticketTemplatePath = path.resolve(__dirname, '../../assets/ticket_template.png');
     const ticket = sharp(ticketTemplatePath);
     
-    const qrImageBuffer = await generateQR(ticketId);
+    const qrImageBuffer = await codeGenerator(ticketId);
     const qrOverlay = { input: qrImageBuffer, left: 1620, top: 155};
 
     const nameImageBuffer = await generateSVG("Name: " + customerName, 40);
@@ -154,33 +186,7 @@ function deleteLocalTicket(ticketPath) {
     }
 }
 
-function mailContent(userName, itemsWithAttractions) {
-    let message = `<h1>Order Confirmation</h1>`;
-    message += `<p>Dear ${userName},</p>`;
-    message += `<p>Thank you for your purchase! Here is the summary of your order:</p>`;
-    message += `<ul>`;
-    itemsWithAttractions.forEach(({item, attraction}) => {
-        message += `<li>
-                        <strong>${item.event.name}, at ${attraction.name}</strong><br>
-                        ${item.event.description}<br>
-                        <img src="https://storage.googleapis.com/tripvault-attractions/${attraction.photo_path}" alt="${item.event.name}" style="width: 100px; height: auto;"><br>
-                        Quantity: ${item.quantity}<br>
-                        Total Price: $${(item.quantity * item.event.price).toFixed(2)}<br>
-                        <p style="font-style: italic;">Available from ${new Date(item.event.startDate).toLocaleDateString()} until ${new Date(item.event.endDate).toLocaleDateString()}</p>
-                    </li><br>`;
-    });
-    message += `</ul>`;
-    message += `<p>Total amount: $${itemsWithAttractions.reduce((acc, {item, attraction}) => acc + item.quantity * item.event.price, 0).toFixed(2)}</p>`;
-    message += '<strong>You will find the tickets attached to this email.</strong><br><br>'
-    message += `<p>We hope you enjoy the events!</p>`;
-    message += `<p style="font-style: italic;">Best regards,<br>Alex Ignat from Attractions Team</p><br>`;
-    message += '<img src="https://storage.googleapis.com/tripvault/logo.png" alt="Logo" style="width: 100px; height: auto;">'
-    message += `<br><br><br><p style="font-size: 10px;">This is an automatically generated email. Please do not reply to it.</p>`;
-    return message;
-}
-
 module.exports = {
-    mailContent,
     deleteLocalTicket,
     createTicket,
     addTicket,

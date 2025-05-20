@@ -1,12 +1,11 @@
 const {createTicket, addTicket, validateTicket, getTicket, deleteLocalTicket} = require("../services/orderService");
-const {mailContent} = require("../services/orderService");
 const {verifyUser, verifyAdmin} = require("../services/userService");
 const {getAttractionByID} = require("../services/attractionService");
-const { transporter, email } = require("../services/emailService");
+const { EmailBuilder, transporter, email } = require("../services/emailService");
 const fs = require('fs');
 const crypto = require('crypto');
 const path = require("path");
-const { uploadTicketToGCS } = require("../services/gcsService");
+const { uploadTicketStrategies } = require("../services/gcsService");
 const { getCityByID, getStateByCityID } = require("../services/locationService");
 const {Storage} = require('@google-cloud/storage');
 const keyFilename = path.join(__dirname, '../../configs/gcs.json');
@@ -50,7 +49,13 @@ module.exports = (app) => {
             }));
 
             const itemsWithAttractions = ticketInfoList.map(({ item, attraction }) => ({ item, attraction }));
-            const content = mailContent(fullName, itemsWithAttractions);
+            const content = new EmailBuilder(itemsWithAttractions)
+                                        .addHeader('Order Confirmation')
+                                        .addUserParagraph(fullName)
+                                        .addItemList()
+                                        .addTotalPrice()
+                                        .addFooter()
+                                        .build();
             const sender = email.USER;
             const receiver = userVerification.email;
             const subject = "Your order has been confirmed";
@@ -75,7 +80,7 @@ module.exports = (app) => {
 
             for (const info of ticketInfoList) {
                 const ticketBuffer = fs.readFileSync(info.ticketPath);
-                await uploadTicketToGCS({
+                await uploadTicketStrategies['gcs']({
                     originalname: `${info.ticketId}.png`,
                     mimetype: 'image/png',
                     buffer: ticketBuffer,
