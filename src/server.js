@@ -10,7 +10,7 @@ const { createTicket } = require('./services/orderService');
 
 app.use(express.json());
 app.use(cors({
-    origin: 'https://localhost:3000'
+    origin: process.env.BASE_URL
 }));
 
 require('./routers/attractionRouter')(app);
