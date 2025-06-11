@@ -1,4 +1,5 @@
-const dbconfig = require('../../configs/dbconfig.json')
+const { loadConfig } = require('../../utils/configPathResolve.js');
+const dbconfig = loadConfig('dbconfig.json');
 const mysql = require('mysql2');
 
 var con = mysql.createConnection({

@@ -2,9 +2,10 @@
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const buckets = require('../../configs/bucket.json');
+const {loadConfig, resolveFilePath} = require('../../utils/configPathResolve.js');
+const buckets = loadConfig('bucket.json');
 const fs = require('fs');
-const keyFilename = path.join(__dirname, '../../configs/gcs.json');
+const keyFilename = resolveFilePath('gcs.json');
 const storage = new Storage({ keyFilename });
 const ticketBucket = storage.bucket(buckets.TICKETS_BUCKET_NAME);
 const attractionBucket = storage.bucket(buckets.ATTRACTIONS_BUCKET_NAME);

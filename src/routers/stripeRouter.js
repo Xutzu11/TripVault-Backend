@@ -1,6 +1,7 @@
-const config = require("../../configs/stripe.json");
+const { loadConfig } = require('../../utils/configPathResolve.js');
+const config = loadConfig('stripe.json');
 const stripe = require("stripe")(config.PRIVATE_KEY);
-const web_config = require("../../configs/web.json"); 
+const web_config = loadConfig('web.json');
 
 module.exports = (app) => {
   // Create Stripe Checkout Session

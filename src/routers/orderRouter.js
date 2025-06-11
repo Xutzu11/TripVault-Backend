@@ -8,9 +8,10 @@ const path = require("path");
 const { uploadTicketStrategies } = require("../services/gcsService");
 const { getCityByID, getStateByCityID } = require("../services/locationService");
 const {Storage} = require('@google-cloud/storage');
-const keyFilename = path.join(__dirname, '../../configs/gcs.json');
+const {loadConfig, resolveFilePath} = require('../../utils/configPathResolve.js');
+const keyFilename = resolveFilePath('gcs.json');
 const storage = new Storage({ keyFilename });
-const buckets = require('../../configs/bucket.json');
+const buckets = loadConfig('bucket.json');
 
 module.exports = (app) => {
     app.post("/api/purchase", async (req, res) => {

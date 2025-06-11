@@ -1,4 +1,5 @@
-const email = require('../../configs/email.json')
+const { loadConfig } = require('../../utils/configPathResolve.js');
+const email = loadConfig('email.json');
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({

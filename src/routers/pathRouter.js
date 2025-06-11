@@ -1,4 +1,5 @@
-const ner = require('../../configs/ner.json');
+const { loadConfig } = require('../../utils/configPathResolve.js');
+const ner = loadConfig('ner.json');
 const con = require('../database/db');
 const { verifyLoggedIn } = require('../services/userService');
 const { getAttractionsWithMinPrice } = require('../services/attractionService');
