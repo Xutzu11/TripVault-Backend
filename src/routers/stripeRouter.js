@@ -1,13 +1,12 @@
 const { loadConfig } = require('../../utils/configPathResolve.js');
 const config = loadConfig('stripe.json');
 const stripe = require("stripe")(config.PRIVATE_KEY);
-const web_config = loadConfig('web.json');
+const baseUrl = process.env.BASE_URL;
 
 module.exports = (app) => {
   // Create Stripe Checkout Session
   app.post("/api/stripe/create-checkout-session", async (req, res) => {
     const { amount } = req.body; // amount in cents
-    const baseUrl = `https://${web_config.HOST}:${web_config.PORT}`;
     try {
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
