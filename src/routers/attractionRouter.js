@@ -12,7 +12,6 @@ const { uploadAttractionToGCS } = require("../services/gcsService");
 const multer = require("multer");
 const { checkCityExists, getStateByCityID } = require("../services/locationService");
 const upload = multer({ storage: multer.memoryStorage() });
-const ner = require("../../configs/ner.json");
 
 module.exports = (app) => {
   app.get("/api/attractions", async (req, res) => {
@@ -234,51 +233,6 @@ module.exports = (app) => {
       res.status(200).send("Attraction added successfully");
     } catch (error) {
       console.error("Error adding attraction:", error);
-      res.status(500).json("Internal Server Error");
-    }
-  });
-
-  app.get("/api/attractions/closest", async (req, res) => {
-    const { latitude, longitude, max_distance, min_rating, nr_attractions } =
-      req.query;
-    if (!latitude || !longitude)
-      return res.status(400).send("Invalid coordinates");
-    try {
-      const token = req.header("Authorization");
-      const userVerification = await verifyLoggedIn(token);
-      if (userVerification == null) {
-        res.status(401).send("Access denied");
-        return;
-      }
-      const attractions = await getAttractions();
-      var selected_attractions = [];
-      for (index in attractions) {
-        const a_latitude = attractions[index].latitude;
-        const a_longitude = attractions[index].longitude;
-
-        const R = 6371e3; // metres
-        const φ1 = (latitude * Math.PI) / 180; // φ, λ in radians
-        const φ2 = (a_latitude * Math.PI) / 180;
-        const Δφ = ((a_latitude - latitude) * Math.PI) / 180;
-        const Δλ = ((a_longitude - longitude) * Math.PI) / 180;
-
-        const a =
-          Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-          Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const d = R * c;
-        if (
-          d <= (max_distance * 1000) / 2.2 &&
-          attractions[index].rating >= min_rating
-        ) {
-          selected_attractions.push(attractions[index]);
-        }
-      }
-      if (selected_attractions.length > nr_attractions)
-        selected_attractions = selected_attractions.slice(0, nr_attractions);
-      res.status(200).json(selected_attractions);
-    } catch (error) {
-      console.error("Error retrieving attractions:", error);
       res.status(500).json("Internal Server Error");
     }
   });

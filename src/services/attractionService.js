@@ -174,10 +174,32 @@ async function checkAttractionExists(id) {
     });
 }
 
+async function getAttractionsWithMinPrice() {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT 
+                a.*, 
+                COALESCE(MIN(e.price), 0) AS price
+            FROM attractions a
+            LEFT JOIN events e ON a.id = e.attraction_id
+            GROUP BY a.id
+        `;
+        con.query(query, (err, results) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(results);
+            }
+        });
+    });
+}
+
+
 module.exports = {
     getAttractions,
     getAttractionsByRangeWithFilters,
     getAttractionsCountWithFilters,
+    getAttractionsWithMinPrice,
     getAttractionByID,
     deleteAttraction,
     updateAttraction,

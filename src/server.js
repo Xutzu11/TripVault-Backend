@@ -6,6 +6,7 @@ const path = require('path')
 const skt = require('socket.io')
 const PORT = 4000
 const app = express()
+const { createTicket } = require('./services/orderService');
 
 app.use(express.json());
 app.use(cors({
