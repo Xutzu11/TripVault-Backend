@@ -37,6 +37,10 @@ const server = new skt.Server(httpsServer, {
 httpsServer.listen(PORT);
 */
 
+app.get("/", (req, res) => {
+  res.send("Backend is up!");
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
