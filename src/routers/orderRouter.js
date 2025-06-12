@@ -13,6 +13,7 @@ const keyFilename = resolveFilePath('gcs.json');
 const storage = new Storage({ keyFilename });
 const buckets = loadConfig('bucket.json');
 const os = require('os');
+const con = require("../database/db.js");
 
 
 module.exports = (app) => {
@@ -86,12 +87,16 @@ module.exports = (app) => {
 
             for (const info of ticketInfoList) {
                 const ticketBuffer = fs.readFileSync(info.ticketPath);
+                console.log(`Uploading ticket ${info.ticketId} to GCS...`);
                 await uploadTicketStrategies['gcs']({
                     originalname: `${info.ticketId}.png`,
                     mimetype: 'image/png',
                     buffer: ticketBuffer,
                 });
+                console.log(`Ticket ${info.ticketId} uploaded successfully.`);
+                console.log(`Deleting local ticket file: ${info.ticketPath}`);
                 deleteLocalTicket(info.ticketPath);
+                console.log(`Local ticket file ${info.ticketPath} deleted.`);
             }
 
         } catch (error) {
