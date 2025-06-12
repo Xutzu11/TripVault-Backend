@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express')
 const cors = require('cors')
 const https = require('https')
@@ -6,7 +7,6 @@ const path = require('path')
 const skt = require('socket.io')
 const PORT = 4000
 const app = express()
-const { createTicket } = require('./services/orderService');
 
 app.use(express.json());
 app.use(cors({
