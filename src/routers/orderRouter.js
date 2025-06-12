@@ -32,7 +32,7 @@ module.exports = (app) => {
                 const city = await getCityByID(attraction[0].city_id);
                 const state = await getStateByCityID(attraction[0].city_id);
                 const ticketId = crypto.randomUUID();
-                const ticketPath = path.resolve(__dirname, `../../tickets/${ticketId}.png`);
+                const ticketPath = path.resolve(__dirname, `../../tmp/${ticketId}.png`);
             
                 await createTicket(fullName, item.event, attraction[0], city[0].name, state[0].name, ticketId, ticketPath);
                 await addTicket(userVerification.username, item.event.id, ticketId);

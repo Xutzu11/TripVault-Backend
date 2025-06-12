@@ -33,7 +33,7 @@ const uploadTicketToGCS = async (file) => {
 
 const uploadTicketToLocal = async (file) => {
     return new Promise((resolve, reject) => {
-        const outputPath = path.resolve(__dirname, `../../tickets/${file.originalname}.png`);
+        const outputPath = path.resolve(__dirname, `../../tmp/${file.originalname}.png`);
 
         fs.writeFile(outputPath, file.buffer, (err) => {
             if (err) {
