@@ -16,6 +16,7 @@ const buckets = loadConfig('bucket.json');
 module.exports = (app) => {
     app.post("/api/purchase", async (req, res) => {
         try {
+            console.log("Purchase request received");
             const cartItems = req.body.cart;
             const token = req.header('Authorization');
             const userVerification = await verifyUser(token);
@@ -69,6 +70,7 @@ module.exports = (app) => {
                 attachments: attachments
             };
 
+            console.log("Sending email to:", receiver);
             transporter.sendMail(mailOptions, function(error, info) {
                 if (error) {
                     console.log(error);
