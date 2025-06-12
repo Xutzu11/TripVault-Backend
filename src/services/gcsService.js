@@ -9,6 +9,7 @@ const keyFilename = resolveFilePath('gcs.json');
 const storage = new Storage({ keyFilename });
 const ticketBucket = storage.bucket(buckets.TICKETS_BUCKET_NAME);
 const attractionBucket = storage.bucket(buckets.ATTRACTIONS_BUCKET_NAME);
+const os = require('os');
 
 const uploadTicketToGCS = async (file) => {
     return new Promise((resolve, reject) => {
@@ -33,7 +34,7 @@ const uploadTicketToGCS = async (file) => {
 
 const uploadTicketToLocal = async (file) => {
     return new Promise((resolve, reject) => {
-        const outputPath = path.resolve(__dirname, `../../tmp/${file.originalname}.png`);
+        const outputPath = path.resolve(os.tmpdir(), `{file.originalname}.png`);
 
         fs.writeFile(outputPath, file.buffer, (err) => {
             if (err) {

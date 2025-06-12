@@ -12,11 +12,14 @@ const {loadConfig, resolveFilePath} = require('../../utils/configPathResolve.js'
 const keyFilename = resolveFilePath('gcs.json');
 const storage = new Storage({ keyFilename });
 const buckets = loadConfig('bucket.json');
+const os = require('os');
+
 
 module.exports = (app) => {
     app.post("/api/purchase", async (req, res) => {
         try {
             console.log("Purchase request received");
+            const tmpDir = os.tmpdir();
             const cartItems = req.body.cart;
             const token = req.header('Authorization');
             const userVerification = await verifyUser(token);
@@ -32,7 +35,7 @@ module.exports = (app) => {
                 const city = await getCityByID(attraction[0].city_id);
                 const state = await getStateByCityID(attraction[0].city_id);
                 const ticketId = crypto.randomUUID();
-                const ticketPath = path.resolve(__dirname, `../../tmp/${ticketId}.png`);
+                const ticketPath = path.join(tmpDir, `${ticketId}.png`);
             
                 await createTicket(fullName, item.event, attraction[0], city[0].name, state[0].name, ticketId, ticketPath);
                 await addTicket(userVerification.username, item.event.id, ticketId);
